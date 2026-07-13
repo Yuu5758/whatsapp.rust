@@ -14,28 +14,89 @@ jobs:
       tag_name: ${{ steps.tag.outputs.tag_name }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Get version and tag
         id: tag
         run: |
+          # Configure Git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
           if [ "${{ github.ref_type }}" = "tag" ]; then
             echo "tag_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           else
+            # Ensure we are tracking the main branch
+            git checkout main
+
             # Extract version from tauri.conf.json
             VERSION=$(python3 -c "import json; print(json.load(open('src-tauri/tauri.conf.json'))['version'])")
             TAG="v$VERSION"
-            echo "tag_name=$TAG" >> $GITHUB_OUTPUT
-            
-            # Check if tag exists on remote
-            git fetch --tags
+
+            # Fetch tags from remote
+            git fetch --tags --force
+
+            # Check if tag already exists on remote
             if git rev-parse "$TAG" >/dev/null 2>&1; then
-              echo "Tag $TAG already exists."
+              echo "Tag $TAG already exists. Incrementing version..."
+              
+              # Increment patch version
+              python3 -c "
+import json
+with open('src-tauri/tauri.conf.json', 'r') as f:
+    data = json.load(f)
+v = data['version']
+parts = v.split('.')
+parts[-1] = str(int(parts[-1]) + 1)
+new_v = '.'.join(parts)
+data['version'] = new_v
+with open('src-tauri/tauri.conf.json', 'w') as f:
+    json.dump(data, f, indent=2)
+
+with open('src-tauri/Cargo.toml', 'r') as f:
+    lines = f.readlines()
+for i, line in enumerate(lines):
+    if line.strip().startswith('version ='):
+        indent = line[:line.find('version =')]
+        lines[i] = f'{indent}version = \"{new_v}\"\n'
+        break
+with open('src-tauri/Cargo.toml', 'w') as f:
+    f.writelines(lines)
+
+with open('src-tauri/Cargo.lock', 'r') as f:
+    lines = f.readlines()
+in_whatrust = False
+for i, line in enumerate(lines):
+    if line.strip() == 'name = \"whatrust\"':
+        in_whatrust = True
+    elif in_whatrust and line.strip().startswith('version ='):
+        indent = line[:line.find('version =')]
+        lines[i] = f'{indent}version = \"{new_v}\"\n'
+        break
+with open('src-tauri/Cargo.lock', 'w') as f:
+    f.writelines(lines)
+
+print(new_v)
+" > new_version.txt
+
+              NEW_VERSION=$(cat new_version.txt)
+              TAG="v$NEW_VERSION"
+              echo "New tag determined: $TAG"
+
+              git add src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
+              git commit -m "chore: bump version to $TAG [skip ci]"
+              git push origin main
+
+              git tag "$TAG"
+              git push origin "$TAG"
             else
-              echo "Creating tag $TAG"
-              git config user.name "github-actions[bot]"
-              git config user.email "github-actions[bot]@users.noreply.github.com"
+              echo "Tag $TAG does not exist. Creating tag $TAG..."
               git tag "$TAG"
               git push origin "$TAG"
             fi
+
+            echo "tag_name=$TAG" >> $GITHUB_OUTPUT
           fi
 
   build:
@@ -52,6 +113,8 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-tag.outputs.tag_name }}
 
       - name: Install Linux deps
         if: matrix.platform == 'ubuntu-22.04'
