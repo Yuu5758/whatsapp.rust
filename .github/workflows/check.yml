@@ -1,0 +1,38 @@
+name: check
+on:
+  push:
+    branches-ignore: []
+  pull_request:
+  workflow_dispatch:
+
+# Compile-check on all three desktop targets. Catches platform-specific code
+# (WebKitGTK / WebView2 / WKWebView paths) that can't be built on a single OS.
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+          - platform: windows-latest
+          - platform: macos-latest
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux deps
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt update
+          sudo apt install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libdbus-1-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libhunspell-dev patchelf
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: cargo build (compile check)
+        working-directory: src-tauri
+        run: cargo build --locked

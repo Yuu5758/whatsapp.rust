@@ -1,0 +1,11 @@
+# Rust / Tauri
+/src-tauri/target/
+**/target/
+
+# Node
+node_modules/
+dist/
+.DS_Store
+
+# Tauri generated
+/src-tauri/gen/

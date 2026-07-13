@@ -1,0 +1,70 @@
+:root {
+  color-scheme: light dark;
+  --green: #25d366;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  padding: 20px 22px;
+  font-size: 14px;
+}
+h1 { font-size: 17px; margin: 0 0 16px; }
+.row { display: flex; align-items: center; gap: 10px; padding: 8px 0; cursor: pointer; }
+.row input { width: 16px; height: 16px; accent-color: var(--green); }
+.field { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+.field input {
+  padding: 8px 10px; border: 1px solid #8884; border-radius: 8px;
+  background: transparent; color: inherit; font-size: 13px;
+}
+.actions { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+button {
+  background: var(--green); color: #042f1a; border: 0; border-radius: 8px;
+  padding: 9px 18px; font-weight: 600; font-size: 14px; cursor: pointer;
+}
+button:hover { filter: brightness(1.05); }
+button.secondary { background: transparent; color: inherit; border: 1px solid #8886; }
+button.secondary:hover { filter: none; background: #8881; }
+.note { color: var(--green); font-weight: 600; }
+
+/* --- Accounts manager --- */
+h2 { font-size: 14px; margin: 0 0 10px; font-weight: 600; }
+.section-title { margin-top: 22px; }
+.divider { border: 0; border-top: 1px solid #8883; margin: 18px 0; }
+#accounts-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.account-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border: 1px solid #8884; border-radius: 8px;
+}
+.account-row .acct-name { flex: 1 1 auto; font-size: 13px; }
+.account-row .acct-unread {
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px;
+  background: var(--green); color: #042f1a; font-size: 11px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.account-row button {
+  padding: 5px 10px; font-size: 12px; font-weight: 600;
+}
+.account-row button.secondary {
+  background: transparent; color: inherit; border: 1px solid #8886;
+}
+.account-row button.secondary:hover { filter: none; background: #8881; }
+.account-row button:disabled { opacity: 0.4; cursor: not-allowed; }
+.add-row { display: flex; gap: 8px; }
+.add-row input {
+  flex: 1 1 auto; padding: 8px 10px; border: 1px solid #8884; border-radius: 8px;
+  background: transparent; color: inherit; font-size: 13px;
+}
+.add-row button:disabled { opacity: 0.4; cursor: not-allowed; }
+.macos-note { color: #c0392b; font-size: 12px; margin: 8px 0 0; }
+.macos-note[hidden] { display: none; }
+.lock-note { font-size: 12px; color: #8696a0; margin-top: 10px; line-height: 1.4; }
+#lock-enabled .field input[type="number"] { width: 80px; }
+
+.hotkey-row { display: flex; gap: 8px; align-items: center; }
+.hotkey-row #hotkey { flex: 1; min-width: 0; }
+#record_hotkey.recording { background: #f0a500; color: #1a1a1a; }
+.hotkey-hint { font-size: 12px; color: #f0a500; margin: 4px 0 0; }
+
+.field-note { font-size: 12px; color: #8696a0; margin: 4px 0 0; line-height: 1.4; }
+.field-note code { background: #8882; padding: 1px 5px; border-radius: 4px; font-size: 11px; }

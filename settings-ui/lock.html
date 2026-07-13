@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Whatsapp.rust — Locked</title>
+    <link rel="stylesheet" href="lock.css" />
+  </head>
+  <body>
+    <div class="lock-card">
+      <div class="lock-glyph" aria-hidden="true">🔒</div>
+      <h1>Whatsapp.rust is locked</h1>
+      <input type="password" id="password" placeholder="Password" autocomplete="current-password" aria-label="Password" />
+      <button id="unlock">Unlock</button>
+      <button id="biometric" class="secondary" hidden>Use biometric</button>
+      <p id="error" class="error" role="alert"></p>
+      <a id="reset" href="#" class="reset">Forgot password? Reset…</a>
+    </div>
+    <script src="lock.js"></script>
+  </body>
+</html>
