@@ -103,7 +103,7 @@ pub fn open_account_window(
 
     #[cfg(target_os = "windows")]
     let builder = builder.additional_browser_args(
-        "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection"
+        "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --enable-gpu-rasterization --enable-oop-rasterization --enable-zero-copy --ignore-gpu-blocklist --disk-cache-size=1048576000 --media-cache-size=512000000"
     );
 
     let builder = apply_isolation(builder, account, app);
@@ -771,7 +771,7 @@ pub fn open_settings_window(app: &AppHandle) {
 
     #[cfg(target_os = "windows")]
     let builder = builder.additional_browser_args(
-        "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection"
+        "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --enable-gpu-rasterization --enable-oop-rasterization --enable-zero-copy --ignore-gpu-blocklist --disk-cache-size=1048576000 --media-cache-size=512000000"
     );
 
     if let Ok(win) = builder.build() {
