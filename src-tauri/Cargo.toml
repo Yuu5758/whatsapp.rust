@@ -1,6 +1,6 @@
 [package]
 name = "whatrust"
-version = "1.0.2"
+version = "1.0.1"
 edition = "2021"
 rust-version = "1.82"
 
@@ -34,14 +34,15 @@ zbus_polkit = "5.0.0"
 # Version-matched to wry 0.55 for the WebView2 PermissionRequested mic/camera handler.
 webview2-com = "0.38"
 windows = { version = "0.61", features = [
-  "Win32_Foundation",         # existing
-  "Win32_System_Com",         # existing (webview2 permission handler)
-  "Security_Credentials_UI",  # UserConsentVerifier + result/availability enums
-  "Win32_System_WinRT",       # IUserConsentVerifierInterop
-  "Foundation",               # async return-type plumbing
-  "Win32_Security",           # SECURITY_ATTRIBUTES (referenced by RegCreateKeyExW)
-  "Win32_System_Registry",    # RegCreateKeyExW/RegSetValueExW: register the toast AUMID in HKCU
-  "Win32_UI_Shell",           # SetCurrentProcessExplicitAppUserModelID
+  "Win32_Foundation",
+  "Win32_System_Com",
+  "Security_Credentials_UI",
+  "Win32_System_WinRT",
+  "Foundation",
+  "Win32_Security",
+  "Win32_System_Registry",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
 ] }
 windows-core = "0.61"
 # In windows-rs 0.61 IAsyncOperation moved out of windows::Foundation into the

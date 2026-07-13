@@ -210,16 +210,20 @@ pub fn run() {
 
 fn check_for_updates(app_handle: tauri::AppHandle) {
     std::thread::spawn(move || {
+        crate::dlog::log("updater: starting update check...");
+        // Wait 20 seconds so WhatsApp Web is fully loaded before showing popup
+        std::thread::sleep(std::time::Duration::from_secs(20));
+        crate::dlog::log("updater: 20s wait done, now querying GitHub API...");
         let repo = "Yuu5758/whatsapp.rust";
-        let url = format!("https://api.github.com/repos/{}/releases/latest", repo);
+        let api_url = format!("https://api.github.com/repos/{}/releases/latest", repo);
         
         let output = if cfg!(target_os = "windows") {
             std::process::Command::new("curl.exe")
-                .args(&["-H", "User-Agent: Whatsapp.rust-Updater", "-s", &url])
+                .args(&["-H", "User-Agent: Whatsapp.rust-Updater", "-s", &api_url])
                 .output()
         } else {
             std::process::Command::new("curl")
-                .args(&["-H", "User-Agent: Whatsapp.rust-Updater", "-s", &url])
+                .args(&["-H", "User-Agent: Whatsapp.rust-Updater", "-s", &api_url])
                 .output()
         };
         
@@ -230,56 +234,111 @@ fn check_for_updates(app_handle: tauri::AppHandle) {
                         if let Some(tag_name) = json.get("tag_name").and_then(|v| v.as_str()) {
                             let latest_version = tag_name.trim_start_matches('v');
                             let current_version = env!("CARGO_PKG_VERSION");
+                            crate::dlog::log(&format!("updater: current={}, latest={}", current_version, latest_version));
                             if is_version_newer(current_version, latest_version) {
-                                let mut download_url = None;
+                                crate::dlog::log("updater: newer version found!");
+
+                                // Find Windows installer URL from release assets
+                                let mut download_url: Option<String> = None;
                                 if let Some(assets) = json.get("assets").and_then(|v| v.as_array()) {
                                     for asset in assets {
                                         if let Some(name) = asset.get("name").and_then(|v| v.as_str()) {
-                                            if name.ends_with("-setup.exe") || name.ends_with("_x64-setup.exe") {
-                                                if let Some(url) = asset.get("browser_download_url").and_then(|v| v.as_str()) {
-                                                    download_url = Some(url.to_string());
+                                            if name.ends_with("_x64-setup.exe") || name.ends_with("-setup.exe") {
+                                                if let Some(u) = asset.get("browser_download_url").and_then(|v| v.as_str()) {
+                                                    download_url = Some(u.to_string());
                                                     break;
                                                 }
                                             }
                                         }
                                     }
                                 }
+                                crate::dlog::log(&format!("updater: installer_url={:?}", download_url));
 
-                                if let Some(url) = download_url {
-                                    let msg = format!(
-                                        "Versi baru (v{}) dari Whatsapp.rust telah tersedia! Apakah Anda ingin memperbarui secara otomatis?",
-                                        latest_version
-                                    );
-                                    let js = format!(
-                                        "if (confirm({:?})) {{ window.__TAURI__.core.invoke('start_auto_update', {{ url: {:?} }}); }}",
-                                        msg, url
-                                    );
-                                    std::thread::sleep(std::time::Duration::from_secs(6));
-                                    if let Some(win) = app_handle.webview_windows().values().next() {
-                                        let _ = win.eval(&js);
+                                #[cfg(target_os = "windows")]
+                                {
+                                    use std::ffi::OsStr;
+                                    use std::os::windows::ffi::OsStrExt;
+
+                                    fn to_wide(s: &str) -> Vec<u16> {
+                                        OsStr::new(s).encode_wide().chain(Some(0)).collect()
                                     }
-                                } else {
-                                    let msg = format!(
-                                        "Versi baru (v{}) dari Whatsapp.rust telah tersedia! Apakah Anda ingin membuka halaman unduhan?",
-                                        latest_version
-                                    );
-                                    let js = format!(
-                                        "if (confirm({:?})) {{ window.open('https://github.com/Yuu5758/whatsapp.rust/releases/latest'); }}",
-                                        msg
-                                    );
-                                    std::thread::sleep(std::time::Duration::from_secs(6));
+
+                                    let title = to_wide(&format!("Whatsapp.rust — Update v{}", latest_version));
+                                    let (body, has_installer) = if download_url.is_some() {
+                                        (format!(
+                                            "Versi baru v{} dari Whatsapp.rust tersedia!\n\nKlik YES untuk mengunduh & install otomatis.\nKlik NO untuk membuka halaman rilis di browser.",
+                                            latest_version
+                                        ), true)
+                                    } else {
+                                        (format!(
+                                            "Versi baru v{} dari Whatsapp.rust tersedia!\n\nKlik YES untuk membuka halaman unduhan di browser.",
+                                            latest_version
+                                        ), false)
+                                    };
+                                    let body_wide = to_wide(&body);
+
+                                    // MB_YESNO=4, MB_ICONINFORMATION=0x40, MB_SYSTEMMODAL=0x1000
+                                    let result = unsafe {
+                                        windows::Win32::UI::WindowsAndMessaging::MessageBoxW(
+                                            None,
+                                            windows::core::PCWSTR(body_wide.as_ptr()),
+                                            windows::core::PCWSTR(title.as_ptr()),
+                                            windows::Win32::UI::WindowsAndMessaging::MESSAGEBOX_STYLE(0x0004 | 0x0040 | 0x1000),
+                                        )
+                                    };
+
+                                    // IDYES = MESSAGEBOX_RESULT(6)
+                                    let idyes = windows::Win32::UI::WindowsAndMessaging::MESSAGEBOX_RESULT(6);
+                                    if result == idyes {
+                                        if has_installer {
+                                            if let Some(url) = download_url {
+                                                crate::dlog::log(&format!("updater: user accepted auto-install, downloading: {}", url));
+                                                start_auto_update(app_handle, url);
+                                            }
+                                        } else {
+                                            let page = format!("https://github.com/Yuu5758/whatsapp.rust/releases/tag/v{}", latest_version);
+                                            let _ = std::process::Command::new("cmd")
+                                                .args(&["/c", "start", "", &page])
+                                                .spawn();
+                                        }
+                                    } else {
+                                        // User clicked NO: open releases page in browser
+                                        let page = format!("https://github.com/Yuu5758/whatsapp.rust/releases/tag/v{}", latest_version);
+                                        let _ = std::process::Command::new("cmd")
+                                            .args(&["/c", "start", "", &page])
+                                            .spawn();
+                                    }
+                                }
+
+                                // Non-Windows fallback: JS confirm
+                                #[cfg(not(target_os = "windows"))]
+                                {
+                                    let releases_url = format!("https://github.com/Yuu5758/whatsapp.rust/releases/tag/v{}", latest_version);
+                                    let msg = format!("Versi baru v{} dari Whatsapp.rust tersedia! Klik OK untuk membuka halaman unduhan.", latest_version);
+                                    let js = format!("if (confirm({:?})) {{ window.open({:?}); }}", msg, releases_url);
                                     if let Some(win) = app_handle.webview_windows().values().next() {
                                         let _ = win.eval(&js);
                                     }
                                 }
+                            } else {
+                                crate::dlog::log("updater: app is up to date.");
                             }
+                        } else {
+                            crate::dlog::log(&format!("updater: no tag_name in response. body: {}", &json_str[..json_str.len().min(200)]));
                         }
+                    } else {
+                        crate::dlog::log(&format!("updater: JSON parse failed. body: {}", &json_str[..json_str.len().min(200)]));
                     }
                 }
+            } else {
+                crate::dlog::log(&format!("updater: curl exit code {:?}", out.status.code()));
             }
+        } else {
+            crate::dlog::log("updater: failed to spawn curl.");
         }
     });
 }
+
 
 #[tauri::command]
 fn start_auto_update(app_handle: tauri::AppHandle, url: String) {
