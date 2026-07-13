@@ -41,49 +41,8 @@ jobs:
             if git rev-parse "$TAG" >/dev/null 2>&1; then
               echo "Tag $TAG already exists. Incrementing version..."
               
-              # Write python script to a file using heredoc with indentation
-              cat << 'EOF' > bump_raw.py
-              import json
-              with open('src-tauri/tauri.conf.json', 'r') as f:
-                  data = json.load(f)
-              v = data['version']
-              parts = v.split('.')
-              parts[-1] = str(int(parts[-1]) + 1)
-              new_v = '.'.join(parts)
-              data['version'] = new_v
-              with open('src-tauri/tauri.conf.json', 'w') as f:
-                  json.dump(data, f, indent=2)
-
-              with open('src-tauri/Cargo.toml', 'r') as f:
-                  lines = f.readlines()
-              for i, line in enumerate(lines):
-                  if line.strip().startswith('version ='):
-                      indent = line[:line.find('version =')]
-                      lines[i] = f'{indent}version = "{new_v}"\n'
-                      break
-              with open('src-tauri/Cargo.toml', 'w') as f:
-                  f.writelines(lines)
-
-              with open('src-tauri/Cargo.lock', 'r') as f:
-                  lines = f.readlines()
-              in_whatrust = False
-              for i, line in enumerate(lines):
-                  if line.strip() == 'name = "whatrust"':
-                      in_whatrust = True
-                  elif in_whatrust and line.strip().startswith('version ='):
-                      indent = line[:line.find('version =')]
-                      lines[i] = f'{indent}version = "{new_v}"\n'
-                      break
-              with open('src-tauri/Cargo.lock', 'w') as f:
-                  f.writelines(lines)
-
-              with open('new_version.txt', 'w') as f:
-                  f.write(new_v)
-EOF
-
-              # Strip the leading 14 spaces of indentation from the heredoc file
-              cut -c 15- bump_raw.py > bump.py
-              python3 bump.py
+              # Execute external version bumping script
+              python3 .github/workflows/bump_version.py
 
               NEW_VERSION=$(cat new_version.txt)
               TAG="v$NEW_VERSION"

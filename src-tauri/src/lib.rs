@@ -107,6 +107,7 @@ pub fn run() {
             commands::unlock_password,
             commands::unlock_biometric,
             commands::reset_app_lock,
+            start_auto_update,
         ])
         .setup(|app| {
             let handle = app.handle();
@@ -230,22 +231,85 @@ fn check_for_updates(app_handle: tauri::AppHandle) {
                             let latest_version = tag_name.trim_start_matches('v');
                             let current_version = env!("CARGO_PKG_VERSION");
                             if is_version_newer(current_version, latest_version) {
-                                let msg = format!(
-                                    "Versi baru (v{}) dari Whatsapp.rust telah tersedia! Apakah Anda ingin membuka halaman unduhan?",
-                                    latest_version
-                                );
-                                let js = format!(
-                                    "if (confirm({:?})) {{ window.open('https://github.com/Yuu5758/whatsapp.rust/releases/latest'); }}",
-                                    msg
-                                );
-                                // Wait a few seconds for windows to fully load before showing confirm dialog
-                                std::thread::sleep(std::time::Duration::from_secs(6));
-                                if let Some(win) = app_handle.webview_windows().values().next() {
-                                    let _ = win.eval(&js);
+                                let mut download_url = None;
+                                if let Some(assets) = json.get("assets").and_then(|v| v.as_array()) {
+                                    for asset in assets {
+                                        if let Some(name) = asset.get("name").and_then(|v| v.as_str()) {
+                                            if name.ends_with("-setup.exe") || name.ends_with("_x64-setup.exe") {
+                                                if let Some(url) = asset.get("browser_download_url").and_then(|v| v.as_str()) {
+                                                    download_url = Some(url.to_string());
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if let Some(url) = download_url {
+                                    let msg = format!(
+                                        "Versi baru (v{}) dari Whatsapp.rust telah tersedia! Apakah Anda ingin memperbarui secara otomatis?",
+                                        latest_version
+                                    );
+                                    let js = format!(
+                                        "if (confirm({:?})) {{ window.__TAURI__.core.invoke('start_auto_update', {{ url: {:?} }}); }}",
+                                        msg, url
+                                    );
+                                    std::thread::sleep(std::time::Duration::from_secs(6));
+                                    if let Some(win) = app_handle.webview_windows().values().next() {
+                                        let _ = win.eval(&js);
+                                    }
+                                } else {
+                                    let msg = format!(
+                                        "Versi baru (v{}) dari Whatsapp.rust telah tersedia! Apakah Anda ingin membuka halaman unduhan?",
+                                        latest_version
+                                    );
+                                    let js = format!(
+                                        "if (confirm({:?})) {{ window.open('https://github.com/Yuu5758/whatsapp.rust/releases/latest'); }}",
+                                        msg
+                                    );
+                                    std::thread::sleep(std::time::Duration::from_secs(6));
+                                    if let Some(win) = app_handle.webview_windows().values().next() {
+                                        let _ = win.eval(&js);
+                                    }
                                 }
                             }
                         }
                     }
+                }
+            }
+        }
+    });
+}
+
+#[tauri::command]
+fn start_auto_update(app_handle: tauri::AppHandle, url: String) {
+    std::thread::spawn(move || {
+        let temp_dir = std::env::temp_dir();
+        let installer_path = temp_dir.join("whatsapp_rust_setup.exe");
+        let installer_str = installer_path.to_string_lossy().to_string();
+
+        let start_js = "alert('Mengunduh pembaruan di latar belakang... Mohon tunggu sebentar, aplikasi akan otomatis ditutup untuk memulai instalasi setelah unduhan selesai.');";
+        if let Some(win) = app_handle.webview_windows().values().next() {
+            let _ = win.eval(start_js);
+        }
+
+        let dl_output = if cfg!(target_os = "windows") {
+            std::process::Command::new("curl.exe")
+                .args(&["-L", "-o", &installer_str, &url])
+                .output()
+        } else {
+            std::process::Command::new("curl")
+                .args(&["-L", "-o", &installer_str, &url])
+                .output()
+        };
+
+        if let Ok(dl_out) = dl_output {
+            if dl_out.status.success() {
+                let _ = std::process::Command::new(&installer_str).spawn();
+                std::process::exit(0);
+            } else {
+                if let Some(win) = app_handle.webview_windows().values().next() {
+                    let _ = win.eval("alert('Gagal mengunduh pembaruan otomatis. Silakan perbarui secara manual.');");
                 }
             }
         }

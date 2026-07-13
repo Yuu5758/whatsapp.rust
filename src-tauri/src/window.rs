@@ -103,7 +103,7 @@ pub fn open_account_window(
 
     #[cfg(target_os = "windows")]
     let builder = builder.additional_browser_args(
-        "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --js-flags=\"--max-old-space-size=512\""
+        "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection"
     );
 
     let builder = apply_isolation(builder, account, app);
@@ -771,7 +771,7 @@ pub fn open_settings_window(app: &AppHandle) {
 
     #[cfg(target_os = "windows")]
     let builder = builder.additional_browser_args(
-        "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --js-flags=\"--max-old-space-size=256\""
+        "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection"
     );
 
     if let Ok(win) = builder.build() {
