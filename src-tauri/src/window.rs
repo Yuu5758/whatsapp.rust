@@ -103,14 +103,14 @@ pub fn open_account_window(
 
     #[cfg(target_os = "windows")]
     let builder = builder.additional_browser_args(
-        "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --js-flags=\"--max-old-space-size=384\""
+        "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --js-flags=\"--max-old-space-size=512\""
     );
 
     let builder = apply_isolation(builder, account, app);
     let win = builder.build()?;
 
     #[cfg(target_os = "windows")]
-    set_memory_usage_level(&win, true);
+    set_memory_usage_level(&win, start_hidden);
 
     // Close-to-tray (reads the live setting so the toggle takes effect without a restart).
     let app_handle = app.clone();
@@ -123,6 +123,8 @@ pub fn open_account_window(
                     crate::lock::lock_now(&app_handle);
                 } else if let Some(w) = app_handle.get_webview_window(&label_for_close) {
                     let _ = w.hide();
+                    #[cfg(target_os = "windows")]
+                    set_memory_usage_level(&w, true);
                 }
                 api.prevent_close();
             }
@@ -667,6 +669,8 @@ pub fn show_account(app: &AppHandle, label: &str) {
         let _ = w.show();
         let _ = w.unminimize();
         let _ = w.set_focus();
+        #[cfg(target_os = "windows")]
+        set_memory_usage_level(&w, false);
     }
 }
 
@@ -744,6 +748,8 @@ pub fn toggle_active(app: &AppHandle) {
             if let Some(l) = label {
                 if let Some(w) = app.get_webview_window(&l) {
                     let _ = w.hide();
+                    #[cfg(target_os = "windows")]
+                    set_memory_usage_level(&w, true);
                 }
             }
         }

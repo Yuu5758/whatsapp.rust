@@ -6,11 +6,11 @@
 
 **Whatsapp.rust is a free, open-source, lightweight desktop client for WhatsApp Web that runs on Linux, Windows, and macOS — a lean, native alternative to the official Electron-based WhatsApp Desktop app, built with Rust and Tauri v2. It runs multiple WhatsApp accounts at once, each in its own window with a fully isolated login.**
 
-![Latest release](https://img.shields.io/github/v/release/Yuu5758/whatsapp-rust?label=release)
-![License: MIT](https://img.shields.io/github/license/Yuu5758/whatsapp-rust)
+![Latest release](https://img.shields.io/github/v/release/Yuu5758/whatsapp.rust?label=release)
+![License: MIT](https://img.shields.io/github/license/Yuu5758/whatsapp.rust)
 ![Platforms: Linux, Windows, macOS](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS-informational)
 ![Built with Rust and Tauri v2](https://img.shields.io/badge/built%20with-Rust%20%2B%20Tauri%20v2-orange)
-![GitHub stars](https://img.shields.io/github/stars/Yuu5758/whatsapp-rust?style=social)
+![GitHub stars](https://img.shields.io/github/stars/Yuu5758/whatsapp.rust?style=social)
 
 > **Unofficial, independent project** — not affiliated with, endorsed by, or sponsored by WhatsApp or Meta. Whatsapp.rust simply loads the official `web.whatsapp.com` interface in a native system webview.
 
@@ -124,17 +124,17 @@ OS supports it — before showing your chats. Enable it under **Settings → Sec
 
 **Linux / macOS** — one line:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Yuu5758/whatsapp-rust/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Yuu5758/whatsapp.rust/master/install.sh | sh
 ```
 Installs the AppImage to `~/.local/bin` on Linux (with an application-menu entry), or the `.dmg` app into `/Applications` on macOS (Apple Silicon). The macOS build is unsigned — if it warns on first launch, right-click the app → **Open**.
 
 **Windows** — one line (PowerShell):
 ```powershell
-irm https://raw.githubusercontent.com/Yuu5758/whatsapp-rust/master/install.ps1 | iex
+irm https://raw.githubusercontent.com/Yuu5758/whatsapp.rust/master/install.ps1 | iex
 ```
 Downloads and runs the latest NSIS installer (`.exe`); an `.msi` is also available on the release page.
 
-**Manual download** — grab a `.AppImage`/`.deb`, `.dmg`, `.exe`, or `.msi` from the [latest release](https://github.com/Yuu5758/whatsapp-rust/releases/latest).
+**Manual download** — grab a `.AppImage`/`.deb`, `.dmg`, `.exe`, or `.msi` from the [latest release](https://github.com/Yuu5758/whatsapp.rust/releases/latest).
 
 <details>
 <summary><b>Build from source</b> (Rust + Cargo + Tauri CLI)</summary>
@@ -180,7 +180,7 @@ Its native shell is lighter because it doesn't bundle a Chromium browser engine 
 Linux (WebKitGTK), Windows 10/11 (WebView2), and macOS 12+ (WKWebView).
 
 ### Is Whatsapp.rust free and open source?
-Yes — Whatsapp.rust is free and open source under the MIT License. The source is on [GitHub](https://github.com/Yuu5758/whatsapp-rust).
+Yes — Whatsapp.rust is free and open source under the MIT License. The source is on [GitHub](https://github.com/Yuu5758/whatsapp.rust).
 
 ### Do voice messages, voice calls, and video calls work in Whatsapp.rust?
 Voice messages work on every platform — Whatsapp.rust grants the webview microphone and camera access. Voice and video **calls** additionally need WebRTC inside the system webview: that's there on Windows (WebView2/Chromium) and macOS (WKWebKit), but most Linux distributions build WebKitGTK **without** WebRTC, so WhatsApp correctly reports that calling isn't supported on Linux. This is an engine limitation, not a permissions problem — if your distro ships a WebRTC-enabled WebKitGTK, calls light up automatically.
@@ -219,7 +219,7 @@ Whatsapp.rust only loads the official `web.whatsapp.com` in a native webview and
 
 ## Contributing
 
-Contributions to this open-source WhatsApp client are welcome — open an issue or a pull request on [GitHub](https://github.com/Yuu5758/whatsapp-rust).
+Contributions to this open-source WhatsApp client are welcome — open an issue or a pull request on [GitHub](https://github.com/Yuu5758/whatsapp.rust).
 
 ## Disclaimer
 

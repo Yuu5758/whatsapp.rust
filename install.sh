@@ -1,13 +1,13 @@
 #!/bin/sh
 # Whatsapp.rust one-line installer — Linux & macOS.
 #
-#   curl -fsSL https://raw.githubusercontent.com/Yuu5758/whatsapp-rust/master/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/Yuu5758/whatsapp.rust/master/install.sh | sh
 #
 # Downloads the latest published GitHub release and installs it
 # (AppImage on Linux, .app into /Applications on macOS). No build toolchain needed.
 set -eu
 
-REPO="Yuu5758/whatsapp-rust"
+REPO="Yuu5758/whatsapp.rust"
 APP="Whatsapp.rust"
 API="https://api.github.com/repos/${REPO}/releases/latest"
 

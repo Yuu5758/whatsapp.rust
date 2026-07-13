@@ -1,11 +1,11 @@
 # Whatsapp.rust one-line installer — Windows.
 #
-#   irm https://raw.githubusercontent.com/Yuu5758/whatsapp-rust/master/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/Yuu5758/whatsapp.rust/master/install.ps1 | iex
 #
 # Downloads the latest published GitHub release installer (NSIS .exe, falling back
 # to the .msi) and runs it.
 $ErrorActionPreference = 'Stop'
-$repo = 'Yuu5758/whatsapp-rust'
+$repo = 'Yuu5758/whatsapp.rust'
 $app  = 'Whatsapp.rust'
 
 Write-Host "Installing $app (latest)..." -ForegroundColor Green

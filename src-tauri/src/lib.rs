@@ -184,17 +184,13 @@ pub fn run() {
                 });
             }
 
+            // Check for updates in the background
+            check_for_updates(handle.clone());
+
             Ok(())
         })
-        .on_window_event(|window, event| {
-            if let tauri::WindowEvent::Focused(focused) = event {
-                if let Some(win) = window.app_handle().get_webview_window(window.label()) {
-                    window::set_memory_usage_level(&win, !*focused);
-                }
-            }
-        })
         .build(tauri::generate_context!())
-        .expect("error while building whatRust")
+        .expect("error while building Whatsapp.rust")
         .run(|_app_handle, _event| {
             // macOS: clicking the dock icon after hide-to-tray re-shows the window
             // (otherwise the app is only reachable via the menu-bar tray icon).
@@ -209,4 +205,64 @@ pub fn run() {
                 }
             }
         });
+}
+
+fn check_for_updates(app_handle: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        let repo = "Yuu5758/whatsapp.rust";
+        let url = format!("https://api.github.com/repos/{}/releases/latest", repo);
+        
+        let output = if cfg!(target_os = "windows") {
+            std::process::Command::new("curl.exe")
+                .args(&["-H", "User-Agent: Whatsapp.rust-Updater", "-s", &url])
+                .output()
+        } else {
+            std::process::Command::new("curl")
+                .args(&["-H", "User-Agent: Whatsapp.rust-Updater", "-s", &url])
+                .output()
+        };
+        
+        if let Ok(out) = output {
+            if out.status.success() {
+                if let Ok(json_str) = String::from_utf8(out.stdout) {
+                    if let Ok(json) = serde_json::from_str::<serde_json::Value>(&json_str) {
+                        if let Some(tag_name) = json.get("tag_name").and_then(|v| v.as_str()) {
+                            let latest_version = tag_name.trim_start_matches('v');
+                            let current_version = env!("CARGO_PKG_VERSION");
+                            if is_version_newer(current_version, latest_version) {
+                                let msg = format!(
+                                    "Versi baru (v{}) dari Whatsapp.rust telah tersedia! Apakah Anda ingin membuka halaman unduhan?",
+                                    latest_version
+                                );
+                                let js = format!(
+                                    "if (confirm({:?})) {{ window.open('https://github.com/Yuu5758/whatsapp.rust/releases/latest'); }}",
+                                    msg
+                                );
+                                // Wait a few seconds for windows to fully load before showing confirm dialog
+                                std::thread::sleep(std::time::Duration::from_secs(6));
+                                if let Some(win) = app_handle.webview_windows().values().next() {
+                                    let _ = win.eval(&js);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+fn is_version_newer(current: &str, latest: &str) -> bool {
+    let curr_parts: Vec<&str> = current.split('.').collect();
+    let lat_parts: Vec<&str> = latest.split('.').collect();
+    for i in 0..std::cmp::min(curr_parts.len(), lat_parts.len()) {
+        if let (Ok(c), Ok(l)) = (curr_parts[i].parse::<u32>(), lat_parts[i].parse::<u32>()) {
+            if l > c {
+                return true;
+            } else if c > l {
+                return false;
+            }
+        }
+    }
+    lat_parts.len() > curr_parts.len()
 }
